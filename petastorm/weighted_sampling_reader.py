@@ -59,7 +59,7 @@ class WeightedSamplingReader(object):
         self._readers = readers
 
         # Normalize probabilities
-        self._cum_prob = np.cumsum(np.asarray(probabilities, dtype=np.float) / np.sum(probabilities))
+        self._cum_prob = np.cumsum(np.asarray(probabilities, dtype=np.float64) / np.sum(probabilities))
 
         for other_idx in range(1, len(readers)):
             if readers[0].batched_output != readers[other_idx].batched_output:
