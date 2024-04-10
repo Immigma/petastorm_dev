@@ -290,7 +290,7 @@ class ContinuousDataLoader(LoaderBase):
         :param shuffling_queue_capacity: Queue capacity is passed to the underlying :class:`tf.RandomShuffleQueue`
           instance. If set to 0, no shuffling will be done.
         """
-        super(DataLoader, self).__init__()
+        super(ContinuousDataLoader, self).__init__()
         self.reader = reader
         self.continuous_dict_key = continuous_dict_key
         self.batch_size = batch_size
