@@ -370,7 +370,7 @@ class ContinuousDataLoader(LoaderBase):
                 # dictionary format of records
                 post_shuffled_row = dict(zip(keys, post_shuffled_row))
 
-            current_continuous_value = post_shuffled_row[continuous_dict_key]
+            current_continuous_value = post_shuffled_row[self.continuous_dict_key]
             
             # Batch is ready? Collate and emmit
             if (not last_continuous_value is None and
