@@ -380,9 +380,12 @@ class ContinuousDataLoader(LoaderBase):
                  len(self._batch_acc) == self.batch_size)):
                      yield self.collate_fn(self._batch_acc)
                      self._batch_acc = []
+                     print("batch")
 
             self._batch_acc.append(post_shuffled_row)
             last_continuous_value = current_continuous_value
+            print(last_continuous_value)
+            print("is set")
 
     # Functions needed to treat data loader as a context manager
     def __enter__(self):
