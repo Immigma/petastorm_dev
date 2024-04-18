@@ -371,6 +371,8 @@ class ContinuousDataLoader(LoaderBase):
                 post_shuffled_row = dict(zip(keys, post_shuffled_row))
 
             current_continuous_value = post_shuffled_row[self.continuous_dict_key]
+            print(last_continuous_value)
+            print(current_continuous_value)
             
             # Batch is ready? Collate and emmit
             if (not last_continuous_value is None and
