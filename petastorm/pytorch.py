@@ -363,7 +363,6 @@ class ContinuousDataLoader(LoaderBase):
             yield self.collate_fn(self._batch_acc)
 
     def _yield_batches(self, keys):
-        self._last_continuous_value = None
         while self._shuffling_buffer.can_retrieve():
             post_shuffled_row = self._shuffling_buffer.retrieve()
             if not isinstance(post_shuffled_row, dict):
