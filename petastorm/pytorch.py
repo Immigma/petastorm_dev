@@ -300,6 +300,7 @@ class ContinuousDataLoader(LoaderBase):
         self._batch_acc = []
         self.shuffling_queue_capacity = shuffling_queue_capacity
         self._in_iter = None
+        self._last_continuous_value = None
 
     def _iter_impl(self):
         """
@@ -362,7 +363,7 @@ class ContinuousDataLoader(LoaderBase):
             yield self.collate_fn(self._batch_acc)
 
     def _yield_batches(self, keys):
-        last_continuous_value = None
+        self._last_continuous_value = None
         while self._shuffling_buffer.can_retrieve():
             post_shuffled_row = self._shuffling_buffer.retrieve()
             if not isinstance(post_shuffled_row, dict):
@@ -371,20 +372,20 @@ class ContinuousDataLoader(LoaderBase):
                 post_shuffled_row = dict(zip(keys, post_shuffled_row))
 
             current_continuous_value = post_shuffled_row[self.continuous_dict_key]
-            print(last_continuous_value)
+            print(self._last_continuous_value)
             print(current_continuous_value)
             
             # Batch is ready? Collate and emmit
-            if (not last_continuous_value is None and
-                (last_continuous_value != current_continuous_value or
+            if (not self._last_continuous_value is None and
+                (self._last_continuous_value != current_continuous_value or
                  len(self._batch_acc) == self.batch_size)):
                      yield self.collate_fn(self._batch_acc)
                      self._batch_acc = []
                      print("batch")
 
             self._batch_acc.append(post_shuffled_row)
-            last_continuous_value = current_continuous_value
-            print(last_continuous_value)
+            self._last_continuous_value = current_continuous_value
+            print(self._last_continuous_value)
             print("is set")
 
     # Functions needed to treat data loader as a context manager
