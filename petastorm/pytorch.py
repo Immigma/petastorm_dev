@@ -361,7 +361,6 @@ class ContinuousDataLoader(LoaderBase):
         # Yield the last and partial batch
         if self._batch_acc:
             yield self.collate_fn(self._batch_acc)
-            print("PARTIAL")
 
     def _yield_batches(self, keys):
         while self._shuffling_buffer.can_retrieve():
@@ -379,6 +378,10 @@ class ContinuousDataLoader(LoaderBase):
                  len(self._batch_acc) == self.batch_size)):
                      yield self.collate_fn(self._batch_acc)
                      self._batch_acc = []
+                     if self._last_continuous_value != current_continuous_value:
+                         print("different experiment")
+                     elif len(self._batch_acc) == self.batch_size:
+                         print("batch full")
 
             self._batch_acc.append(post_shuffled_row)
             self._last_continuous_value = current_continuous_value
