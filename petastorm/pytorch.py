@@ -333,7 +333,6 @@ class ContinuousDataLoader(LoaderBase):
             # Add rows to shuffling buffer
             if not self.reader.batched_output:
                 self._shuffling_buffer.add_many([row_as_dict])
-                print(row_as_dict[self.continuous_dict_key])
             else:
                 # Transposition:
                 #   row_as_dict:        {'a': [1,2,3], 'b':[4,5,6]}
@@ -362,6 +361,7 @@ class ContinuousDataLoader(LoaderBase):
         # Yield the last and partial batch
         if self._batch_acc:
             yield self.collate_fn(self._batch_acc)
+            print("PARTIAL")
 
     def _yield_batches(self, keys):
         while self._shuffling_buffer.can_retrieve():
