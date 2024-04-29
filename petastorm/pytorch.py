@@ -333,7 +333,7 @@ class ContinuousDataLoader(LoaderBase):
             # Add rows to shuffling buffer
             if not self.reader.batched_output:
                 self._shuffling_buffer.add_many([row_as_dict])
-                print("no batched reader ouput")
+                print(row_as_dict[self.continuous_dict_key])
             else:
                 # Transposition:
                 #   row_as_dict:        {'a': [1,2,3], 'b':[4,5,6]}
@@ -345,13 +345,11 @@ class ContinuousDataLoader(LoaderBase):
                 # slow implementation though. Probably can comeup with a faster way to shuffle,
                 # perhaps at the expense of a larger memory consumption...
                 self._shuffling_buffer.add_many(row_group_as_tuple)
-                print("batched reader output")
 
             # _yield_batches will emit as much batches as are allowed by the shuffling_buffer (RandomShufflingBuffer
             # will avoid underflowing below a certain number of samples to guarantee some samples decorrelation)
             for batch in self._yield_batches(keys):
                 yield batch
-                print("batch")
 
         # Once reader can not read new rows, we might still have a bunch of rows waiting in the shuffling buffer.
         # Telling shuffling buffer that we are finished allows to deplete the buffer completely, regardless its
@@ -366,7 +364,6 @@ class ContinuousDataLoader(LoaderBase):
             yield self.collate_fn(self._batch_acc)
 
     def _yield_batches(self, keys):
-        print("yield call")
         while self._shuffling_buffer.can_retrieve():
             post_shuffled_row = self._shuffling_buffer.retrieve()
             if not isinstance(post_shuffled_row, dict):
