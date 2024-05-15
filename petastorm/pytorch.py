@@ -275,11 +275,12 @@ class ContinuousDataLoader(LoaderBase):
         Number of epochs is defined by the configuration of the reader argument.
 
         An optional shuffling queue is created if shuffling_queue_capacity is greater than 0. No samples will be
-        returned to a user by the ``DataLoader`` until the queue is full. After that, batches of `batch_size`
-        will be created by uniformly sampling the shuffling queue. Once no more samples are available from the data
-        reader, the shuffling queue is allowed to be consumed till no further samples are available.
+        returned to a user by the ``DataLoader`` until the queue is full. After that, variable sized (less or equal to
+        ``max_batch_size`` samples) batches will be created by uniformly sampling the shuffling queue. Once no more
+        samples are available from the data reader, the shuffling queue is allowed to be consumed till no further
+        samples are available.
 
-        Note that batch size varies and will on average be less than ``max_batch_size`` samples.
+        Note that batch size varies and will likely on average be less than ``max_batch_size`` samples.
 
         NOTE: ``make_batch_reader`` has it's own ``shuffle_row_groups`` argument. It randomizes order in
         which parquet row-groups are loaded and has no effect on the order of rows within each row-group. To achieve
@@ -381,7 +382,7 @@ class ContinuousDataLoader(LoaderBase):
             # Then collate and emmit.
             if (not self._last_continuous_value is None and
                 (self._last_continuous_value != current_continuous_value or
-                 len(self._batch_acc) == self.batch_size)):
+                 len(self._batch_acc) == self.max_batch_size)):
                      yield self.collate_fn(self._batch_acc)
                      self._batch_acc = []
 
