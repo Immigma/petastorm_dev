@@ -260,13 +260,14 @@ class ContinuousDataLoader(LoaderBase):
     """
     A data loader adaptor for ``torch.utils.data.DataLoader``.
 
-    This class iterates and returns items from the Reader in batches.
+    This class iterates and returns items from the Reader in batches. Within each batch the value for the key
+    continuous_dict_key is identical for all rows. This results in varying batch sizes.
 
     This loader can be used as an iterator and will terminate when the reader used in the construction of the class
     runs out of samples.
     """
 
-    def __init__(self, reader, continuous_dict_key, batch_size=1, collate_fn=decimal_friendly_collate,
+    def __init__(self, reader, continuous_dict_key, max_batch_size=1, collate_fn=decimal_friendly_collate,
                  shuffling_queue_capacity=0):
         """
         Initializes a data loader object, with a default collate.
@@ -278,14 +279,16 @@ class ContinuousDataLoader(LoaderBase):
         will be created by uniformly sampling the shuffling queue. Once no more samples are available from the data
         reader, the shuffling queue is allowed to be consumed till no further samples are available.
 
-        Note that the last returned batch could have less then ``batch_size`` samples.
+        Note that batch size varies and will on average be less than ``max_batch_size`` samples.
 
         NOTE: ``make_batch_reader`` has it's own ``shuffle_row_groups`` argument. It randomizes order in
         which parquet row-groups are loaded and has no effect on the order of rows within each row-group. To achieve
         row-level shuffling you should set shuffling_queue_capacity to a non zero value.
 
         :param reader: petastorm Reader instance
-        :param batch_size: the number of items to return per batch; factored into the len() of this reader
+        :param continuous_dict_key: the dictionary key representing a value that remains consistent across all rows
+          within a batch
+        :param max_batch_size: the maximum number of items to return per batch; factored into the len() of this reader
         :param collate_fn: an optional callable to merge a list of samples to form a mini-batch.
         :param shuffling_queue_capacity: Queue capacity is passed to the underlying :class:`tf.RandomShuffleQueue`
           instance. If set to 0, no shuffling will be done.
@@ -293,13 +296,14 @@ class ContinuousDataLoader(LoaderBase):
         super(ContinuousDataLoader, self).__init__()
         self.reader = reader
         self.continuous_dict_key = continuous_dict_key
-        self.batch_size = batch_size
+        self.max_batch_size = max_batch_size
         self.collate_fn = collate_fn
 
         # _batch_acc accumulates samples for a single batch.
         self._batch_acc = []
         self.shuffling_queue_capacity = shuffling_queue_capacity
         self._in_iter = None
+        # Captures the value for continuous_dict_key of the row that was last inserted into a batch.
         self._last_continuous_value = None
 
     def _iter_impl(self):
@@ -307,7 +311,7 @@ class ContinuousDataLoader(LoaderBase):
         The Data Loader iterator stops the for-loop when reader runs out of samples.
         """
         # As we iterate over incoming samples, we are going to store them in `self._batch_acc`, until we have a batch of
-        # the requested batch_size ready.
+        # the requested max_batch_size ready or a different value for continuous_dict_key occurs.
 
         keys = None
         if self.shuffling_queue_capacity > 0:
@@ -370,9 +374,11 @@ class ContinuousDataLoader(LoaderBase):
                 # dictionary format of records
                 post_shuffled_row = dict(zip(keys, post_shuffled_row))
 
+            # Get value for continuous_dict_key of current row to check consistency with last_continuous_value.
             current_continuous_value = post_shuffled_row[self.continuous_dict_key]
             
-            # Batch is ready? Collate and emmit
+            # Batch is ready, i.e. either a different value for continuous_dict_key has occured or the batch is full?
+            # Then collate and emmit.
             if (not self._last_continuous_value is None and
                 (self._last_continuous_value != current_continuous_value or
                  len(self._batch_acc) == self.batch_size)):
@@ -380,6 +386,7 @@ class ContinuousDataLoader(LoaderBase):
                      self._batch_acc = []
 
             self._batch_acc.append(post_shuffled_row)
+            # Save value for continuous_dict_key of current processed row for comparison with next row.
             self._last_continuous_value = current_continuous_value
 
     # Functions needed to treat data loader as a context manager
